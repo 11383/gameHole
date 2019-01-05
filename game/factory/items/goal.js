@@ -2,10 +2,13 @@ import BaseFactoryItem from './base.js'
 
 class Goal extends BaseFactoryItem {
 
-    constructor(factory, x, y, radius) {
-        return super(
-            factory,
-            Matter.Bodies.circle(x, y, radius, {
+    constructor(factory, x, y, radius, params) {
+
+        const body = Matter.Bodies.circle(
+            x,
+            y,
+            radius,
+            {
                 isSensor: true,
                 isStatic: true,
                 render: {
@@ -14,21 +17,27 @@ class Goal extends BaseFactoryItem {
                     lineWidth: 2
                 },
                 label: 'goal'
-            })
+            }
+        )
+
+        return super(
+            factory,
+            body,
+            params
         )
     }
 
     onCollisionStart(object) {
-        
-        if( object.label == 'ball' ) {
+
+        if (object.label == 'ball') {
             this.collisionStart = (new Date()).getTime()
         }
     }
 
     onCollisionEnd(object) {
-        
-        if( object.label == 'ball' ) {
+        this.body.render.lineWidth = 2
 
+        if (object.label == 'ball') {
             this.collisionStart = 0
             this.inActive()
         }
@@ -36,28 +45,34 @@ class Goal extends BaseFactoryItem {
 
     onCollisionActive(object) {
 
-        if( object.label == 'ball' ) {
+        if (object.label == 'ball') {
 
             this.body.render.strokeStyle = "#1abc9c"
 
-            if((new Date()).getTime() - this.collisionStart > 1000) {
+            const time = (new Date()).getTime() 
+
+            if(time - this.collisionStart < 1000) {
+                this.body.render.lineWidth = Math.floor( (time - this.collisionStart) / 300) + 2
+            } 
+            
+            else if (time - this.collisionStart > 1000) {
                 this.active()
 
                 // remove item from world
-                Matter.Composite.remove(this.factory.world, object)
+                this.factory.remove(object)
                 this.factory.ballCounter--
 
-                !this.factory.ballCounter <= 0 && this.endOfGameCallback()
+                /* if no ball in world, simple fire 'end' callback */
+                this.factory.ballCounter == 0 
+                && this.params.onSuccess
+                && this.params.onSuccess()
+
+                /* if we want delete goal after success */
+                this.params.deleteAfter
+                && this.factory.remove(this.body)
             }
         }
-
     }
-
-    endOfGameCallback() {
-        console.log('end of game callback')
-    }
-
-    // onEndOfGame(callback) {}
 
     active() {
         this.body.render.fillStyle = '#1abc9c'

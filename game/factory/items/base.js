@@ -1,10 +1,8 @@
 class FactoryBaseItem {
-    constructor(factory, body) {
-        console.log('base')
+    constructor(factory, body, params) {
         this.factory = factory
         this.body = body
-
-        console.log(this)
+        this.params = params
 
         body.collisionStart = this.onCollisionStart
         body.collisionEnd = this.onCollisionEnd
@@ -14,15 +12,7 @@ class FactoryBaseItem {
         return this.body
     }
 
-    // setFactory(factory) {
-    //     this.factory = factory
-    // }
-
-    // getFactory(factory) {
-    //     return this.factory 
-    // }
-
-    body() { return this.body }
+    getBodyParams() {}
 
     onCollisionActive(object) {}
     onCollisionStart(object) {}

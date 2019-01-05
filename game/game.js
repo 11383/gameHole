@@ -1,15 +1,37 @@
 import Factory from './factory/factory.js'
+import TimeCounter from './timeCounter.js'
 
-class game {
-    constructor(options = {}) {
+class Game {
+    constructor({
+        renderPlace = document.body,
+        width = window.innerWidth,
+        height = window.innerHeight,
+        time = 60000,
+        timePlace = document.body,
+        bonusSpawn = 10000,
+        onFinish = _ => {}
+    } = {}) {
         
         this.options = {
-            renderPlace: document.body,
-            width: window.innerWidth,
-            height: window.innerHeight
+            renderPlace,
+            width,
+            height,
+            bonusSpawn,
+            onFinish
         }
 
-        this.gameFactory = new Factory( this.world )
+        this.timeRenderOptions = {
+            time,
+            element: timePlace,
+            finishTimeCb: _ => this.endGame(false)
+        }
+
+        this.initPosition = {
+            x: null,
+            y: null
+        }
+
+        this.gameFactory = new Factory(this.world)
 
         this.initGame()
     }
@@ -48,15 +70,43 @@ class game {
         const factory = this.gameFactory
 
         const worldWalls = [
-            factory.Wall(0, -45, this.options.width, 50),  //top
-            factory.Wall(this.options.width - 5, 0, 50, this.options.height),  //right
-            factory.Wall(0, this.options.height - 5, this.options.width, 50), // bottom
-            factory.Wall(-45, 0, 50, this.options.height), // left
+            /* top edge */
+            factory.Wall({ 
+                x: 0, 
+                y: -45, 
+                width: this.options.width, 
+                height: 50 
+            }),
 
-            factory.Goal(200, 100),
+            /* right edge */
+            factory.Wall({ 
+                x: this.options.width - 5, 
+                y: 0, width: 50, 
+                height: this.options.height 
+            }),
 
-            factory.Ball(100, 100),
-            factory.Ball(100, 200)
+            /* bottom edge */
+            factory.Wall({ 
+                x: 0, 
+                y: this.options.height - 5, 
+                width: this.options.width, 
+                height: 50 
+            }),
+
+            /* left edge */
+            factory.Wall({ 
+                x: -45, 
+                y: 0, 
+                width: 50, 
+                height: 
+                this.options.height 
+            }),
+
+            factory.Goal({ x: 200, y: 100, deleteAfter: true }, _ => this.endGame()),
+            factory.Goal({ x: 100, y: 300, deleteAfter: true }, _ => this.endGame()),
+
+            factory.Ball({ x: 100, y: 100 }),
+            factory.Ball({ x: 200, y: 150 }),
         ]
 
         objects.push(...worldWalls)
@@ -78,34 +128,48 @@ class game {
 
         // attachHandlers
         this.attachHandlers()
+
+        // create timeCounter
+        this.timeCounter = new TimeCounter(this.timeRenderOptions)
+
+        // init bonus
+        setTimeout( _ => this.addBonus(), this.options.bonusSpawn)
     }
 
-    endGame() {
-        console.log('end game')
+    endGame(result = true) {
+        Matter.Render.stop(this.render)
+        this.timeCounter.stop()
+
+        this.options.onFinish
+        && this.options.onFinish(result)
     }
 
-    onDeviceOrientation(e) {
+    onDeviceOrientation(event) {
         const factor = 20 / 200
         const gravity = this.world.gravity;
 
-        gravity.x = Matter.Common.clamp(event.gamma, -90, 90) * factor;
-        gravity.y = Matter.Common.clamp(event.beta, -90, 90) * factor;
+        this.initPosition.x == null && (this.initPosition.x = event.gamma)
+        this.initPosition.y == null && (this.initPosition.y = event.beta) 
+
+        gravity.x = Matter.Common.clamp(event.gamma - this.initPosition.x, -90, 90) * factor
+        gravity.y = Matter.Common.clamp(event.beta - this.initPosition.y, -90, 90) * factor
     }
 
-    attachMatterEvent(eventName, callbackName) {
+    //attachCollisionEevent
+    onCollision(eventName, callbackName) {
         Matter.Events.on(this.engine, eventName, function(event) {
             var pairs = event.pairs;
     
             for (var i = 0, j = pairs.length; i != j; ++i) {
                 var pair = pairs[i]
 
-                if(pair.bodyA[callbackName] != undefined) {
+                if (pair.bodyA[callbackName] != undefined) {
                     const callback = pair.bodyA[callbackName].bind(pair.bodyA.classObject)
 
                     callback(pair.bodyB)
                 }
 
-                if(pair.bodyB[callbackName] != undefined) {
+                if (pair.bodyB[callbackName] != undefined) {
                     const callback = pair.bodyB[callbackName].bind(pair.bodyB.classObject)
 
                     callback(pair.bodyA)
@@ -114,13 +178,31 @@ class game {
         })
     }
 
+    addBonus() {
+        Matter.World.add(
+            this.world, 
+            this.gameFactory.Bonus({ 
+                x: Math.random() * this.options.width, 
+                y: Math.random() * this.options.height
+            }, bonus => this.onBonusSuccess(bonus) 
+        ))
+
+        setTimeout( _ => this.addBonus(), this.options.bonusSpawn)
+    }
+
+    onBonusSuccess(bonus) {
+        this.timeCounter.addTime(
+            bonus * 1000
+        )
+    }
+
     attachHandlers() {
         window.addEventListener('deviceorientation', this.onDeviceOrientation.bind(this))
 
-        this.attachMatterEvent('collisionActive', 'collisionActive')
-        this.attachMatterEvent('collisionStart', 'collisionStart')
-        this.attachMatterEvent('collisionEnd', 'collisionEnd')
+        this.onCollision('collisionActive', 'collisionActive')
+        this.onCollision('collisionStart', 'collisionStart')
+        this.onCollision('collisionEnd', 'collisionEnd')
     }
 }
 
-export default game;
+export default Game;

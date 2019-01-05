@@ -4,25 +4,37 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>Document</title>
+    
+    <title>Game</title>
 
-    <style>
-        html, body {
-            margin: 0;
-            width: 100%;
-            height: 100%;
-        }
-    </style>
+    <link href="https://fonts.googleapis.com/css?family=Staatliches" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <div class="game-counter">test</div>
+    
+    <div class="game-modal">
+        <div class="game-modal__content"></div>
+    </div>
+
     <script src="./vendor/matter.js"></script>
-    <!-- <script src="game.js"></script> -->
 
     <script type="module">
-        import game from './game/game.js'
+        import Game from './game/game.js'
 
-        new game({})
+        const onFinish = (result) => {
+            const modal = document.querySelector('.game-modal')
+
+            modal.classList.add('game-modal--active')
+            modal.querySelector('.game-modal__content').innerText = `You ${ result ? 'won' : 'loose'}!`
+        }
+
+        new Game({
+            timePlace: document.querySelector('.game-counter'), 
+            time: 60000,
+            onFinish 
+        })
     </script>
 </body>
 </html>
