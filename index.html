@@ -15,13 +15,16 @@
     <div class="game-counter">test</div>
     
     <div class="game-modal">
-        <div class="game-modal__content"></div>
+        <div class="game-modal__content">
+            <span class="game-text"></span>
+            <div class="btn btn-primary">Restart</div>
+        </div>
     </div>
 
     <script src="./vendor/matter.js"></script>
 
     <script type="module">
-        import Game from './game/game.js'
+        import Game from './src/game.js'
 
         const onFinish = (result) => {
             const modal = document.querySelector('.game-modal')
@@ -30,7 +33,7 @@
             modal.querySelector('.game-modal__content').innerText = `You ${ result ? 'won' : 'loose'}!`
         }
 
-        new Game({
+        window.game = new Game({
             timePlace: document.querySelector('.game-counter'), 
             time: 60000,
             onFinish 

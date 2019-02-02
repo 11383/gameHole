@@ -2,6 +2,17 @@ import Factory from './factory/factory.js'
 import TimeCounter from './timeCounter.js'
 
 class Game {
+    /**
+     * Construct
+     * @param {Object} params {
+     *  renderPlace: HTMLDomObject - render game
+     *  width, height:  size of render
+     *  time: maxTime of Game,
+     *  timePlace: HTMLDomObject - render timer
+     *  bonusSpawn: time of next bonus spawn,
+     *  onFinish: CallableFunction - callback of game over
+     * } 
+     */
     constructor({
         renderPlace = document.body,
         width = window.innerWidth,
@@ -36,19 +47,25 @@ class Game {
         this.initGame()
     }
 
-    // return physics engine
+    /**
+     * @returns {Object} Matter.js Physics Engine
+     */
     get engine() {
         !this._engine && (this._engine = Matter.Engine.create())
 
         return this._engine;
     }
 
-    // return "World" of physics engine
+    /**
+     * @returns {Object} Matter.js World
+     */
     get world() {
         return this.engine.world
     }
 
-    //
+    /**
+     * @returns {Object} Matter.js Renderer
+     */
     get render() {
         if(!this._render) {
             const {renderPlace, ...rendererOptions} = this.options
@@ -66,6 +83,10 @@ class Game {
         return this._render
     }
 
+    /**
+     * Init Matter.js world with given objects
+     * @param {Array} objects objects to include in created world 
+     */
     initWorld(objects = []) {
         const factory = this.gameFactory
 
@@ -114,6 +135,9 @@ class Game {
         Matter.World.add(this.world, objects)
     }
 
+    /**
+     * Init Game
+     */
     initGame() {
         // init world
         this.initWorld()
@@ -136,6 +160,11 @@ class Game {
         setTimeout( _ => this.addBonus(), this.options.bonusSpawn)
     }
 
+    /**
+     * Event: endGame
+     * Fired when user win or loose game
+     * @param {Boolean} result result of game - winner or looser
+     */
     endGame(result = true) {
         Matter.Render.stop(this.render)
         this.timeCounter.stop()
@@ -144,6 +173,21 @@ class Game {
         && this.options.onFinish(result)
     }
 
+    /**
+     * Restart current game
+     */
+    restartGame() {
+        Matter.World.clear(this.world)
+        Matter.Engine.clear(this.engine)
+
+        this.initWorld()
+        this.timeCounter = new TimeCounter(this.timeRenderOptions) // @todo
+    }
+
+    /**
+     * Attach handler for devica change orientation
+     * @param {Event} event device orientation event 
+     */
     onDeviceOrientation(event) {
         const factor = 20 / 200
         const gravity = this.world.gravity;
@@ -178,6 +222,9 @@ class Game {
         })
     }
 
+    /**
+     * Add bonus to current game
+     */
     addBonus() {
         Matter.World.add(
             this.world, 
@@ -190,12 +237,17 @@ class Game {
         setTimeout( _ => this.addBonus(), this.options.bonusSpawn)
     }
 
+    /**
+     * Event: user collect bonus
+     * @param {TimeBonus} bonus 
+     */
     onBonusSuccess(bonus) {
-        this.timeCounter.addTime(
-            bonus * 1000
-        )
+        this.timeCounter.time +=  bonus * 1000
     }
 
+    /**
+     * Attach handlers to matter.js engine
+     */
     attachHandlers() {
         window.addEventListener('deviceorientation', this.onDeviceOrientation.bind(this))
 

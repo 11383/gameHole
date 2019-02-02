@@ -1,4 +1,16 @@
+/**
+ * TimeCounter
+ */
 class timeCounter {
+    /**
+     * Construc
+     * @param {Object} params {
+     *  element: HTMLDomObject - render
+     *  time: time of TimeCounter
+     *  refresh: refresh time
+     *  finishTimeCb: CallableFunction - after counter reached 00:00
+     * } 
+     */
     constructor({
         element = document.body, 
         time = 60000,
@@ -17,16 +29,26 @@ class timeCounter {
         this.render()
     }
 
+    /**
+     * Add ms to timer
+     * @param {Number} ms to add 
+     */
     addTime(ms) {
         this.time += ms
         
         this.update()
     }
 
+    /**
+     * Stop timer
+     */
     stop() {
         clearInterval(this.interval)
     }
 
+    /**
+     * Refresh timer
+     */
     update() {
         this.time -= this.refresh
 
@@ -40,6 +62,9 @@ class timeCounter {
         }
     }
 
+    /**
+     * Render timer
+     */
     render() {
         this.element.innerText = this.formatTime(this.time)
 
@@ -48,6 +73,10 @@ class timeCounter {
         }
     }
 
+    /**
+     * Format time to human readable format
+     * @param {Number} time timestamp 
+     */
     formatTime(time) {
         const mm = Math.floor(time / 60000).toString()
         const ss = Math.floor((time - mm * 60000) / 1000).toString()

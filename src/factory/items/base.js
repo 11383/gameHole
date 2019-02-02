@@ -12,8 +12,6 @@ class FactoryBaseItem {
         return this.body
     }
 
-    getBodyParams() {}
-
     onCollisionActive(object) {}
     onCollisionStart(object) {}
     onCollisionEnd(object) {}
